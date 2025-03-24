@@ -1,0 +1,20 @@
+{# Formulario de búsqueda #}
+<form method="get" action="{{ path('comercial_filtro') }}">
+    <input type="text" 
+           name="busqueda" 
+           value="{{ searchTerm }}"
+           placeholder="Buscar en comerciales..."
+           class="form-control">
+    <button type="submit" class="btn btn-primary mt-2">Buscar</button>
+</form>
+
+{# Listado de comentarios #}
+{% for comercial in comerciales %}
+    <div class="comercial">
+        <h4>{{ comercial.nombre }}</h4>
+
+
+    </div>
+{% else %}
+    <p>No se encontraron comerciales</p>
+{% endfor %}

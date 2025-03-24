@@ -4,7 +4,9 @@ namespace App\Controller;
 
 use App\Entity\Comercial;
 use App\Form\ComercialFormType;
+use App\Repository\ComercialRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -12,13 +14,30 @@ use Symfony\Component\Routing\Attribute\Route;
 
 final class ComercialController extends AbstractController
 {
+    private $comercialRepository;
+
+    public function __construct(ComercialRepository $comercialRepository)
+    {
+        $this->comercialRepository = $comercialRepository;
+    }
     //Ver historial de anuncios, donde se mostrarán todos los anuncios independientemente de si han sido vendidos o no.
     //Aquí debemos mostrar de algún modo que el producto fue vendido, además de la fecha de venta.
     #[Route('/list', name: 'listar')]
-    public function listarComercial(EntityManagerInterface $entityManagerInterface ): Response
+    public function listarComercial(Request $request ): Response
     {
 
-        $listaComercial=$entityManagerInterface->getRepository(Comercial::class)->findAll();
+        $searchTerm = $request->query->get('busqueda');
+        $queryBuilder = $this->comercialRepository->createQueryBuilder('c');
+        //si el if no tiene condicion se supone que es un finbByAll();
+        if ($searchTerm) {
+            $queryBuilder
+                ->where('LOWER(c.nombre) LIKE LOWER(:term)')
+                
+                ->setParameter('term', '%' . $searchTerm . '%');
+        }
+    
+        $listaComercial = $queryBuilder->getQuery()->getResult();
+    
         
 
 
@@ -79,4 +98,48 @@ final class ComercialController extends AbstractController
             "form"=>$form->createView(),
         ]);
     }
+
+    #[Route('/comercial/eliminar/{id}', name: 'eliminar_comercial')]
+    public function eliminar(int $id, ManagerRegistry $doctrine): Response
+    {
+        $comercial = $doctrine->getRepository(Comercial::class)->find($id);
+        if (!$comercial) {
+            throw $this->createNotFoundException('Comercial no encontrado');
+        }
+
+        $entityManager = $doctrine->getManager();
+        $entityManager->remove($comercial);
+        $entityManager->flush();
+
+        return $this->redirectToRoute('listar');
+    }
+
+    #[Route('/comerciales', name: 'comercial_filtro')]
+public function list(Request $request, EntityManagerInterface $em): Response
+{
+    $searchTerm = $request->query->get('busqueda');
+    $queryBuilder = $em->getRepository(Comercial::class)->createQueryBuilder('c');
+
+    if ($searchTerm) {
+        $queryBuilder
+            ->where('LOWER(c.nombre) LIKE LOWER(:term)')
+            ->setParameter('term', '%' . $searchTerm . '%');
+    }
+
+    $comercial = $queryBuilder->getQuery()->getResult();
+
+    return $this->render('comercial/filtro.html.twig', [
+        'comerciales' => $comercial,
+        'searchTerm' => $searchTerm
+    ]);
+}
+
+#[Route('/comerciales/detalle/{nombre}', name: 'nombre_comercial')]
+public function detalleNombreComercial(EntityManagerInterface $entityManager, String $nombre): Response
+    {
+        $comercialRepo=$entityManager->getRepository(Comercial::class);
+        $comercial=$comercialRepo->findOneBy(['nombre'=>$nombre]);
+    return $this->render('comercial/detalle.html.twig', ['comercial' => $comercial,]);
+}
+
 }
