@@ -1,0 +1,28 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Anuncios No Vendidos{% endblock %}
+
+{% block body %}
+<div class="container mt-4">
+    <h1>Anuncios No Vendidos</h1>
+    
+    <table class="table table-striped table-bordered">
+        <thead class="thead-dark">
+            <tr>
+                <th>Nombre</th>
+                <th>Fecha</th>
+                <th>Precio Oferta</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for anuncio in anuncios %}
+            <tr>
+                <td>{{ anuncio.nombre }}</td>
+                <td>{{ anuncio.fecha|date('Y-m-d') }}</td>
+                <td>{{ anuncio.precioOferta }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
